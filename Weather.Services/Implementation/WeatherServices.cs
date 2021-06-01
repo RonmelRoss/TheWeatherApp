@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.WebUtilities;
+﻿using System;
+using Microsoft.AspNetCore.WebUtilities;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -24,14 +25,30 @@ namespace Weather.Services.Implementaion
                 ["query"] = zipCode,
             };
 
-            var response = await _client.GetAsync<WeatherApiResponse>(QueryHelpers.AddQueryString("/current", query));
-            
-            return new ServiceResponse
+            try
             {
-                FlyKite = response.Current.Wind_Speed > 15 && !response.Current.Weather_Descriptions.Any(a => a.ToLower().Contains("rain")),
-                GoOutSide = !response.Current.Weather_Descriptions.Any(a => a.ToLower().Contains("rain")),
-                WearSunScreen = response.Current.UV_Index > 3
-            };
+                var response = await _client.GetAsync<WeatherApiResponse>(QueryHelpers.AddQueryString("/current", query));
+
+                if (response.Success == false)
+                {
+                    return new ServiceResponse {
+                            ZipCodeValid = false
+                    };
+                }
+                else
+                {
+                    return new ServiceResponse
+                    {
+                        FlyKite = response.Current.Wind_Speed > 15 && !response.Current.Weather_Descriptions.Any(a => a.ToLower().Contains("rain")),
+                        GoOutSide = !response.Current.Weather_Descriptions.Any(a => a.ToLower().Contains("rain")),
+                        WearSunScreen = response.Current.UV_Index > 3
+                    };
+                }
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }
